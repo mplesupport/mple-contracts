@@ -11,6 +11,8 @@ MPLE provides a fair and transparent systematic foundation for the mining indust
 
 [logo]: https://github.com/mplesupport/mple-contracts/blob/main/assets/mple_logo_250_etherscan.png?raw=true "MPLE"
 
+[logo2]: https://github.com/mplesupport/mple-contracts/blob/main/assets/mple_icon.png?raw=true "MPLE"
+
 
 
 
