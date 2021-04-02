@@ -26,12 +26,14 @@ MPLE provides a fair and transparent systematic foundation for the mining indust
 | block timestamp 	| 1616678507 	|
 | account 	| 0xfdb69D1Bf88bd9acb6DA4565f011944f8FD9aB67 	|
 | total cost 	| 0.503653858 ETH 	|
+
+
    Pausing for 2 confirmations...
    ---------------------------------------------------
-   > confirmation number: 2 (block: 12108325)
-   > Saving artifacts
+  |  confirmation number: 2 (block: 12108325)
+      Saving artifacts
    ---------------------------------------------------
-   > Total cost:         0.503653858 ETH
+  |  Total cost|          0.503653858 ETH
 
 
 
