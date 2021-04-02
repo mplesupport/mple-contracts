@@ -1,0 +1,233 @@
+
+// SPDX-License-Identifier: MIT
+import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+pragma solidity >=0.6.0 <0.8.0;
+
+/**
+ * @dev Contract of the ISTAKING
+ * MPLE or Tokens paired with cryptocurrencies from other networks can be mined.
+ *
+ */
+contract StakingMPLE {
+
+    struct StakeDeposit {
+        uint256 amount;
+        uint256 startDate;
+        uint256 exitDate;
+        bool exists;
+    }
+
+    /** security for math*/
+    using SafeMath for uint256;
+    /** security for address*/
+    using Address for address;
+
+    address private _owner;
+
+    ERC20 public investToken;
+    ERC20 public rewardToken;
+
+    uint256 beginDate;
+    uint256 endDate;
+
+    uint256 private _totalSupply;
+    uint256 private _totalReward;
+    mapping (address => StakeDeposit) private _balances;
+
+    bool stakingDone = false;
+
+    /**
+    * @dev Check if it is a smart contract.
+    */
+    modifier onlyContract(address account)
+    {
+        require(account.isContract(), "[Validation] The address does not contain a contract");
+        _;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(owner() == msg.sender, "Ownable: caller is not the owner");
+        _;
+    }
+
+    constructor(address _token)
+    {
+        investToken = ERC20(_token);
+        //defalt value is same
+        rewardToken = ERC20(_token);
+        _owner = msg.sender;
+    }
+
+    /**
+     * @dev Returns the address of the current owner.
+     */
+    function owner() public view virtual returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        emit OwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
+    }
+
+
+     /**
+   * @dev set staking Contract
+   */
+    function setRewardContract(address contractAddr) public onlyOwner onlyContract(contractAddr)
+    {
+        rewardToken = ERC20(contractAddr);
+    }
+    
+    /**
+     * @dev Returns the name of reward tokens.
+     */
+    function asset() public view returns (string memory)
+    {
+        return rewardToken.name();
+    }
+
+    /**
+     * @dev Returns the address of reward tokens.
+     */
+    function assetAddr() public view returns (address)
+    {
+        return address(rewardToken);
+    }
+
+    /**
+     * @dev Returns the total amount of staking.
+     */
+    function totalBalance() public view returns (uint256)
+    {
+        return _totalSupply;
+    }
+
+    /**
+     * @dev Returns the amount of tokens owned by `account`.
+     */
+    function balanceOf(address account) public view returns (uint256)
+    {
+         return _balances[account].amount;
+    }
+
+    /**
+     * @dev Stake for mining.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Staking} event.
+     */
+    function staking(address beneficiary, uint256 amount) public returns (bool)
+    {
+        require(amount > 0, "[Validation] The stake deposit has to be larger than 0");
+        require(!_balances[beneficiary].exists, "[Deposit] You already have a stake");
+
+        StakeDeposit storage sd = _balances[beneficiary];
+        sd.amount = sd.amount.add(amount);
+        sd.startDate = block.timestamp;
+        sd.exists = true;
+
+        _totalSupply = _totalSupply.add(amount); 
+         emit StakeDeposited(beneficiary, amount);
+         return true;
+    }
+
+    /**
+     * @dev This function withdraws the staked MPLE and reward tokens for mining.
+     *
+     * Returns a boolean value indicating whether the operation succeeded.
+     *
+     * Emits a {Withdraw} event.
+     */
+    function withdraw(address beneficiary, uint256 amount) public returns (bool){
+
+         StakeDeposit storage sd = _balances[beneficiary];
+        require(sd.exists && sd.amount != 0, "[Initiate Withdrawal] There is no stake deposit for this account");
+        require(sd.exitDate == 0, "[Initiate Withdrawal] You already initiated the withdrawal");
+
+        sd.exitDate = block.timestamp;
+    
+        _totalSupply = _totalSupply.sub(amount);
+        return true;
+    }
+
+
+    /**
+     * @dev Returns whether reward has been confirmed.
+     */
+    function isconfirmed() public view returns (bool){
+        return stakingDone;
+    }
+
+
+    /**
+     * @dev Return the rewards you can receive. Returns 0 if the reward has not been confirmed.
+     */
+    function reward(address account) public view returns (uint256){
+        StakeDeposit storage sd = _balances[account];
+        // _totalSupply.div(_totalReward)
+        return sd.amount;
+    }
+
+    
+
+    /**
+     * @dev Returns the past time since deposit.
+     */
+    function term(address account) public view returns (uint256){
+        StakeDeposit storage sd = _balances[account];
+        return sd.startDate.sub(sd.exitDate);
+    }
+
+    function beginAt() public view returns (uint256){
+        return  beginDate;
+    }
+
+    /**
+     * @dev Returns the staking close date.
+     */
+    function endAt() public view returns (uint256){
+        return endDate;
+    }
+
+    /**
+     * @dev Returns the staking start time.
+     */
+    function registAt(address account) public view returns (uint256){
+        return _balances[account].startDate;
+    }
+
+    /**
+     * @dev Returns the staking end time.
+     */
+    function exitAt(address account) public view returns (uint256){
+        return _balances[account].exitDate;
+    }
+
+    /**
+     * @dev Emitted when the token stakes.
+     */
+    event Staking(address indexed from, uint256 value);
+
+    /**
+     * @dev Emitted when the owner makes a withdrawal.
+     */
+    event Withdraw(address indexed owner, uint256 value);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    event StakeDeposited(address indexed account, uint256 amount);
+    event WithdrawInitiated(address indexed account, uint256 amount);
+    event WithdrawExecuted(address indexed account, uint256 amount, uint256 reward);
+}   
